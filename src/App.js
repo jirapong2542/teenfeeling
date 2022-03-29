@@ -1,24 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
 
+import { Container, Row, Col } from 'react-bootstrap';
+import './App.css';
+import logo from './2.png';
 function App() {
+
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+
+    <Container fluid style={{ color: 'white' }} className='p-5'>
+
+      <div className="cardmoon">
+        <img src={logo} className="logo" />
+        {/* <div className="head">
+           <h1>NIKE AM90id</h1> 
+        </div> */}
+      </div>
+
+
+    </Container >
   );
 }
 

@@ -1,38 +1,56 @@
-.App {
-  text-align: center;
+/*   
 }
+h1{
+  transition: transform 2s;
+ 
+}
+.card:hover > p{
+  
+   transform: scale(1.5);
+    top:80%;
+ 
+}
+  
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+/* .card header {
+  position:absolute;
+  top: 120%;
+  left: 0%;
+  padding: 1px;
+  border-radius:  25px;
+  width: 450px;
+  height: 90px;
+  transition: all .5s;
+  opacity:0;
+} */
+/* .card:hover > header{
+  
+    opacity:1;
+    width: 450px;
+    height: 90px;
+    transform: translateY(-120px);
+} */
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+ .cardmoon {
+  transition: transform .7s;
+  /* box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2); */
+  /* border-radius: 500px; */
+  margin: auto;
+  /* background: rgb(76, 74, 74); */
+  width: 850px;
+  height: 850px;
 }
+ .cardmoon:hover{
+   transform: scale(1.08)
+} 
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.cardmoon:hover > img{
+   transform: scale(1.4);           
 }
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+.logo{
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  opacity:0.9;
+  transition: 0.5s;
+ } 
