@@ -26,7 +26,7 @@ function App() {
   })
   Toast.fire({
     icon: 'info',
-    title: 'ปรับปรุงชั่วคราว อีก 10 มาทำใหม่'
+    title: 'ปรับปรุงชั่วคราว อีก 10ปี มาทำใหม่'
   })
 
   return (
