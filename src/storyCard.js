@@ -31,7 +31,7 @@ function getStableStars(seed, amount) {
   });
 }
 
-function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+function getWrappedLines(context, text, maxWidth, maxLines = 4) {
   const segments = Array.from(text);
   const lines = [];
   let line = '';
@@ -58,11 +58,44 @@ function wrapText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
     visibleLines[maxLines - 1] = `${visibleLines[maxLines - 1].slice(0, -1)}...`;
   }
 
-  visibleLines.forEach((textLine, index) => {
-    context.fillText(textLine, x, y + index * lineHeight);
+  return visibleLines;
+}
+
+function drawCenteredStoryText(context, mark) {
+  const centerX = STORY_WIDTH / 2;
+  const messageLineHeight = 66;
+  const moodHeight = 34;
+  const moodGap = 46;
+  const subtitleGap = 42;
+  const subtitleHeight = 32;
+
+  context.save();
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+
+  context.font = '700 46px Segoe UI, sans-serif';
+  const messageLines = getWrappedLines(context, `"${mark.message}"`, 820, 4);
+  const messageHeight = messageLines.length * messageLineHeight;
+  const blockHeight = moodHeight + moodGap + messageHeight + subtitleGap + subtitleHeight;
+  const blockTop = 1370 - blockHeight / 2;
+  const moodY = blockTop + moodHeight / 2;
+  const messageTop = blockTop + moodHeight + moodGap;
+  const subtitleY = messageTop + messageHeight + subtitleGap + subtitleHeight / 2;
+
+  context.fillStyle = mark.mood.color;
+  context.font = '700 28px Segoe UI, sans-serif';
+  context.fillText(mark.mood.label, centerX, moodY);
+
+  context.fillStyle = '#f8f4ea';
+  context.font = '700 46px Segoe UI, sans-serif';
+  messageLines.forEach((line, index) => {
+    context.fillText(line, centerX, messageTop + index * messageLineHeight + messageLineHeight / 2);
   });
 
-  return y + visibleLines.length * lineHeight;
+  context.fillStyle = '#aaa397';
+  context.font = '26px Segoe UI, sans-serif';
+  context.fillText('ฝากแสงไว้บนพระจันทร์ดวงเดียวกัน', centerX, subtitleY);
+  context.restore();
 }
 
 function drawCircleImage(context, image, x, y, size) {
@@ -178,18 +211,7 @@ export async function createStoryBlob(mark) {
   context.font = '26px Segoe UI, sans-serif';
   context.fillText('@t__n_f__ling', STORY_WIDTH - 96, 118);
 
-  context.textAlign = 'center';
-  context.fillStyle = mark.mood.color;
-  context.font = '700 28px Segoe UI, sans-serif';
-  context.fillText(mark.mood.label, STORY_WIDTH / 2, 1180);
-
-  context.fillStyle = '#f8f4ea';
-  context.font = '700 46px Segoe UI, sans-serif';
-  const nextY = wrapText(context, `"${mark.message}"`, STORY_WIDTH / 2, 1272, 820, 66, 4);
-
-  context.fillStyle = '#aaa397';
-  context.font = '26px Segoe UI, sans-serif';
-  context.fillText('ฝากแสงไว้บนพระจันทร์ดวงเดียวกัน', STORY_WIDTH / 2, nextY + 34);
+  drawCenteredStoryText(context, mark);
 
   context.strokeStyle = 'rgba(255,255,255,0.16)';
   context.beginPath();
