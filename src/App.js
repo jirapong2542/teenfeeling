@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import './App.css';
 import moonFull from './1.jpg';
+import DevelopmentNotice from './DevelopmentNotice';
+import StoryShareDock from './StoryShareDock';
 
 const STORAGE_KEY = 'leave-a-light-marks';
 
@@ -47,10 +49,19 @@ const seedMarks = [
   },
 ];
 
+function normalizeMark(mark) {
+  const mood = moods.find((item) => item.id === mark.mood?.id || item.label === mark.mood?.label) || moods[0];
+
+  return {
+    ...mark,
+    mood,
+  };
+}
+
 function getInitialMarks() {
   try {
     const storedMarks = window.localStorage.getItem(STORAGE_KEY);
-    return storedMarks ? JSON.parse(storedMarks) : seedMarks;
+    return storedMarks ? JSON.parse(storedMarks).map(normalizeMark) : seedMarks;
   } catch {
     return seedMarks;
   }
@@ -73,101 +84,6 @@ function createMoonPosition() {
   };
 }
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-}
-
-function wrapText(context, text, x, y, maxWidth, lineHeight) {
-  const words = text.split('');
-  let line = '';
-  let currentY = y;
-
-  words.forEach((word) => {
-    const testLine = line + word;
-    const metrics = context.measureText(testLine);
-
-    if (metrics.width > maxWidth && line) {
-      context.fillText(line, x, currentY);
-      line = word;
-      currentY += lineHeight;
-      return;
-    }
-
-    line = testLine;
-  });
-
-  context.fillText(line, x, currentY);
-  return currentY + lineHeight;
-}
-
-async function createStoryBlob(mark) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1080;
-  canvas.height = 1920;
-  const context = canvas.getContext('2d');
-  const image = await loadImage(moonFull);
-
-  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#020202');
-  gradient.addColorStop(0.56, '#0a0a0a');
-  gradient.addColorStop(1, '#000000');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  context.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  for (let index = 0; index < 120; index += 1) {
-    const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height * 0.72;
-    context.fillRect(x, y, 1, 1);
-  }
-
-  const moonSize = 850;
-  const moonX = (canvas.width - moonSize) / 2;
-  const moonY = 260;
-  const cropSize = Math.min(image.width, image.height) * 0.66;
-  const cropX = (image.width - cropSize) / 2;
-  const cropY = (image.height - cropSize) / 2;
-
-  context.save();
-  context.beginPath();
-  context.arc(canvas.width / 2, moonY + moonSize / 2, moonSize / 2, 0, Math.PI * 2);
-  context.clip();
-  context.drawImage(image, cropX, cropY, cropSize, cropSize, moonX, moonY, moonSize, moonSize);
-  context.restore();
-
-  const lightX = moonX + (mark.x / 100) * moonSize;
-  const lightY = moonY + (mark.y / 100) * moonSize;
-  context.shadowColor = mark.mood.color;
-  context.shadowBlur = 36;
-  context.fillStyle = mark.mood.color;
-  context.beginPath();
-  context.arc(lightX, lightY, 12, 0, Math.PI * 2);
-  context.fill();
-  context.shadowBlur = 0;
-
-  context.textAlign = 'center';
-  context.fillStyle = '#f8f4ea';
-  context.font = '44px Segoe UI, sans-serif';
-  const nextY = wrapText(context, `"${mark.message}"`, canvas.width / 2, 1280, 820, 68);
-
-  context.fillStyle = '#bdb7aa';
-  context.font = '26px Segoe UI, sans-serif';
-  context.fillText(`${mark.mood.label} / ฝากไว้บนพระจันทร์`, canvas.width / 2, nextY + 34);
-
-  context.fillStyle = '#f8f4ea';
-  context.font = '30px Segoe UI, sans-serif';
-  context.fillText('@t__n_f__ling', canvas.width / 2, 1740);
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
-  });
-}
-
 function App() {
   const [marks, setMarks] = useState(getInitialMarks);
   const [selectedMood, setSelectedMood] = useState(moods[0]);
@@ -176,7 +92,6 @@ function App() {
   const [storyMark, setStoryMark] = useState(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [formError, setFormError] = useState('');
-  const [shareStatus, setShareStatus] = useState('');
 
   const moodCounts = useMemo(() => {
     return moods.map((mood) => ({
@@ -214,43 +129,12 @@ function App() {
     setComposerOpen(false);
     setMessage('');
     setFormError('');
-    setShareStatus('แสงของคุณถูกฝากไว้แล้ว');
-  };
-
-  const downloadStory = async (mark) => {
-    const blob = await createStoryBlob(mark);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `moon-light-${mark.id}.png`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const shareStory = async () => {
-    if (!storyMark) {
-      return;
-    }
-
-    const blob = await createStoryBlob(storyMark);
-    const file = new File([blob], `moon-light-${storyMark.id}.png`, { type: 'image/png' });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: 'ฝากแสงไว้บนพระจันทร์',
-        text: 'ฝากรอยเล็ก ๆ ไว้บนพระจันทร์ดวงเดียวกัน',
-      });
-      setShareStatus('เปิดหน้าต่างแชร์แล้ว');
-      return;
-    }
-
-    await downloadStory(storyMark);
-    setShareStatus('เครื่องนี้แชร์ตรงไม่ได้ เลยดาวน์โหลดภาพให้แทน');
   };
 
   return (
     <main className='app-shell'>
+      <DevelopmentNotice />
+
       <section className='moon-room' aria-label='Leave a light on the moon'>
         <div className='star-field' />
 
@@ -277,7 +161,6 @@ function App() {
                 onClick={() => {
                   setActiveMark(mark);
                   setStoryMark(mark);
-                  setShareStatus('');
                 }}
                 style={{
                   '--x': `${mark.x}%`,
@@ -294,9 +177,7 @@ function App() {
         <div className='hero-copy'>
           <p className='eyebrow'>leave a light</p>
           <h1>ฝากแสงไว้บนพระจันทร์</h1>
-          <p>
-            เขียนหนึ่งประโยค แล้วให้มันกลายเป็นจุดแสงเล็ก ๆ บนพระจันทร์ดวงเดียวกัน
-          </p>
+          <p>เขียนหนึ่งประโยค แล้วให้มันกลายเป็นจุดแสงเล็ก ๆ บนพระจันทร์ดวงเดียวกัน</p>
           <button className='primary-action' onClick={() => setComposerOpen(true)} type='button'>
             ฝากรอยของคุณ
           </button>
@@ -374,35 +255,7 @@ function App() {
         </div>
       )}
 
-      {storyMark && (
-        <div className='story-dock' aria-live='polite'>
-          <div className='story-preview'>
-            <img src={moonFull} alt='' />
-            <span
-              className='story-light'
-              style={{
-                '--x': `${storyMark.x}%`,
-                '--y': `${storyMark.y}%`,
-                '--light': storyMark.mood.color,
-              }}
-            />
-            <div className='story-copy'>
-              <p>"{storyMark.message}"</p>
-              <span>ฝากไว้บนพระจันทร์ / @t__n_f__ling</span>
-            </div>
-          </div>
-
-          <div className='story-actions'>
-            <p>{shareStatus || 'สร้างภาพ 9:16 สำหรับ Instagram Story'}</p>
-            <button onClick={shareStory} type='button'>
-              แชร์
-            </button>
-            <button onClick={() => downloadStory(storyMark)} type='button'>
-              ดาวน์โหลด
-            </button>
-          </div>
-        </div>
-      )}
+      <StoryShareDock mark={storyMark} moonImage={moonFull} />
     </main>
   );
 }
