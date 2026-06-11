@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#020202"/>
+  <circle cx="256" cy="256" r="196" fill="url(#halo)" opacity="0.9"/>
+  <circle cx="256" cy="256" r="150" fill="#f4f1e8"/>
+  <circle cx="196" cy="198" r="28" fill="#d5d2ca" opacity="0.8"/>
+  <circle cx="304" cy="186" r="18" fill="#d8d5ce" opacity="0.72"/>
+  <circle cx="335" cy="282" r="34" fill="#cbc8c1" opacity="0.55"/>
+  <circle cx="226" cy="320" r="48" fill="#c9c6bf" opacity="0.45"/>
+  <circle cx="159" cy="276" r="19" fill="#e0ddd5" opacity="0.68"/>
+  <circle cx="283" cy="244" r="72" fill="url(#moonShade)" opacity="0.36"/>
+  <path d="M91 277C144 205 258 188 421 250" stroke="#f8f4ea" stroke-opacity="0.22" stroke-width="3"/>
+  <circle cx="346" cy="244" r="10" fill="#ffe7a8"/>
+  <circle cx="346" cy="244" r="25" stroke="#ffe7a8" stroke-opacity="0.55" stroke-width="4"/>
+  <circle cx="346" cy="244" r="46" fill="url(#lightGlow)"/>
+  <defs>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(210)">
+      <stop stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.55" stop-color="#9db8e8" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonShade" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(150)">
+      <stop stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.68" stop-color="#111111" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#111111" stop-opacity="0.48"/>
+    </radialGradient>
+    <radialGradient id="lightGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(346 244) rotate(90) scale(46)">
+      <stop stop-color="#ffe7a8" stop-opacity="0.56"/>
+      <stop offset="1" stop-color="#ffe7a8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
