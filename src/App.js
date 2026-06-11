@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import './App.css';
 import moonFull from './1.jpg';
 import DevelopmentNotice from './DevelopmentNotice';
+import MoonWall from './MoonWall';
 import StoryShareDock from './StoryShareDock';
 import { validateMoonMessage } from './moderation';
 
@@ -106,6 +107,11 @@ function App() {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextMarks));
   };
 
+  const selectMark = (mark) => {
+    setActiveMark(mark);
+    setStoryMark(mark);
+  };
+
   const leaveLight = (event) => {
     event.preventDefault();
     const moderation = validateMoonMessage(message);
@@ -160,8 +166,7 @@ function App() {
                 className={activeMark.id === mark.id ? 'moon-light active' : 'moon-light'}
                 key={mark.id}
                 onClick={() => {
-                  setActiveMark(mark);
-                  setStoryMark(mark);
+                  selectMark(mark);
                 }}
                 style={{
                   '--x': `${mark.x}%`,
@@ -206,6 +211,13 @@ function App() {
           ))}
         </div>
       </section>
+
+      <MoonWall
+        marks={marks}
+        moodCounts={moodCounts}
+        onOpenComposer={() => setComposerOpen(true)}
+        onSelectMark={selectMark}
+      />
 
       {composerOpen && (
         <div className='modal-layer' role='presentation'>

@@ -5,6 +5,93 @@ const STORY_HEIGHT = 1920;
 const STORY_TEXT_TOP = 1148;
 const STORY_TEXT_BOTTOM = 1594;
 
+export const STORY_THEMES = [
+  {
+    id: 'classic',
+    label: 'Classic',
+    description: 'พระจันทร์เต็มดวงกับแสงเด่นแบบเดิม',
+    background: ['#020202', '#090909', '#000000'],
+    moonSize: 840,
+    moonY: 250,
+    moonGlow: ['rgba(255,255,255,0.18)', 'rgba(188,216,255,0.08)', 'rgba(255,255,255,0)'],
+    orbitColor: 'rgba(255,255,255,0.16)',
+    starAmount: 150,
+    starTone: '255,255,255',
+    textColor: '#f8f4ea',
+    mutedColor: '#aaa397',
+    brandColor: '#f8f4ea',
+    footerLine: 'rgba(255,255,255,0.16)',
+    footerText: 'same moon, different light',
+    cropScale: 0.66,
+    imageScale: 1,
+    showOrbit: true,
+  },
+  {
+    id: 'minimal',
+    label: 'Minimal',
+    description: 'ดำนิ่ง โล่ง อ่านข้อความชัด',
+    background: ['#000000', '#030303', '#000000'],
+    moonSize: 690,
+    moonY: 300,
+    moonGlow: ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.045)', 'rgba(255,255,255,0)'],
+    orbitColor: 'rgba(255,255,255,0.08)',
+    starAmount: 36,
+    starTone: '255,255,255',
+    textColor: '#ffffff',
+    mutedColor: '#9d9d9d',
+    brandColor: '#f8f4ea',
+    footerLine: 'rgba(255,255,255,0.1)',
+    footerText: 'quiet light, same moon',
+    cropScale: 0.68,
+    imageScale: 1,
+    showOrbit: false,
+  },
+  {
+    id: 'cinematic',
+    label: 'Cinematic',
+    description: 'เข้ม ลึก เหมือนโปสเตอร์หนัง',
+    background: ['#01030a', '#07101b', '#000000'],
+    moonSize: 910,
+    moonY: 205,
+    moonGlow: ['rgba(188,216,255,0.24)', 'rgba(82,118,166,0.13)', 'rgba(255,255,255,0)'],
+    orbitColor: 'rgba(188,216,255,0.2)',
+    starAmount: 210,
+    starTone: '210,226,255',
+    textColor: '#f4f7ff',
+    mutedColor: '#9ba8bd',
+    brandColor: '#e8f4ff',
+    footerLine: 'rgba(188,216,255,0.18)',
+    footerText: 'a small signal in the dark',
+    cropScale: 0.65,
+    imageScale: 1.02,
+    showOrbit: true,
+  },
+  {
+    id: 'warm',
+    label: 'Warm Light',
+    description: 'แสงอุ่น นุ่ม เหมาะกับข้อความคิดถึง',
+    background: ['#050403', '#0c0a07', '#000000'],
+    moonSize: 800,
+    moonY: 260,
+    moonGlow: ['rgba(255,231,168,0.2)', 'rgba(255,231,168,0.08)', 'rgba(255,231,168,0)'],
+    orbitColor: 'rgba(255,231,168,0.18)',
+    starAmount: 110,
+    starTone: '255,231,168',
+    textColor: '#fff7e5',
+    mutedColor: '#b8a98c',
+    brandColor: '#fff7e5',
+    footerLine: 'rgba(255,231,168,0.17)',
+    footerText: 'leave warmth on the moon',
+    cropScale: 0.66,
+    imageScale: 1,
+    showOrbit: true,
+  },
+];
+
+function getStoryTheme(themeId) {
+  return STORY_THEMES.find((theme) => theme.id === themeId) || STORY_THEMES[0];
+}
+
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -110,7 +197,7 @@ function getStoryTextLayout(context, message) {
   return null;
 }
 
-function drawCenteredStoryText(context, mark) {
+function drawCenteredStoryText(context, mark, theme) {
   const centerX = STORY_WIDTH / 2;
   const layout = getStoryTextLayout(context, mark.message);
   const blockTop = STORY_TEXT_TOP + (STORY_TEXT_BOTTOM - STORY_TEXT_TOP - layout.blockHeight) / 2;
@@ -126,28 +213,31 @@ function drawCenteredStoryText(context, mark) {
   context.font = '700 28px Segoe UI, sans-serif';
   context.fillText(mark.mood.label, centerX, moodY);
 
-  context.fillStyle = '#f8f4ea';
+  context.fillStyle = theme.textColor;
   context.font = `700 ${layout.fontSize}px Segoe UI, sans-serif`;
   layout.lines.forEach((line, index) => {
     context.fillText(line, centerX, messageTop + index * layout.lineHeight + layout.lineHeight / 2);
   });
 
-  context.fillStyle = '#aaa397';
+  context.fillStyle = theme.mutedColor;
   context.font = '26px Segoe UI, sans-serif';
   context.fillText('ฝากแสงไว้บนพระจันทร์ดวงเดียวกัน', centerX, subtitleY);
   context.restore();
 }
 
-function drawCircleImage(context, image, x, y, size) {
-  const cropSize = Math.min(image.width, image.height) * 0.66;
+function drawCircleImage(context, image, x, y, size, theme) {
+  const cropSize = Math.min(image.width, image.height) * theme.cropScale;
   const cropX = (image.width - cropSize) / 2;
   const cropY = (image.height - cropSize) / 2;
+  const scaledSize = size * theme.imageScale;
+  const imageX = x - (scaledSize - size) / 2;
+  const imageY = y - (scaledSize - size) / 2;
 
   context.save();
   context.beginPath();
   context.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
   context.clip();
-  context.drawImage(image, cropX, cropY, cropSize, cropSize, x, y, size, size);
+  context.drawImage(image, cropX, cropY, cropSize, cropSize, imageX, imageY, scaledSize, scaledSize);
 
   const vignette = context.createRadialGradient(
     x + size / 2,
@@ -190,7 +280,8 @@ export function getStoryCaption(mark) {
   return `"${mark.message}"\n\nฝากแสงไว้บนพระจันทร์\n@t__n_f__ling`;
 }
 
-export async function createStoryBlob(mark) {
+export async function createStoryBlob(mark, themeId = 'classic') {
+  const theme = getStoryTheme(themeId);
   const canvas = document.createElement('canvas');
   canvas.width = STORY_WIDTH;
   canvas.height = STORY_HEIGHT;
@@ -201,20 +292,20 @@ export async function createStoryBlob(mark) {
   context.imageSmoothingQuality = 'high';
 
   const background = context.createLinearGradient(0, 0, 0, STORY_HEIGHT);
-  background.addColorStop(0, '#020202');
-  background.addColorStop(0.46, '#090909');
-  background.addColorStop(1, '#000000');
+  background.addColorStop(0, theme.background[0]);
+  background.addColorStop(0.46, theme.background[1]);
+  background.addColorStop(1, theme.background[2]);
   context.fillStyle = background;
   context.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
 
-  getStableStars(mark.id, 150).forEach((star) => {
-    context.fillStyle = `rgba(255,255,255,${star.alpha})`;
+  getStableStars(`${mark.id}-${theme.id}`, theme.starAmount).forEach((star) => {
+    context.fillStyle = `rgba(${theme.starTone},${star.alpha})`;
     context.fillRect(star.x, star.y, star.size, star.size);
   });
 
-  const moonSize = 840;
+  const moonSize = theme.moonSize;
   const moonX = (STORY_WIDTH - moonSize) / 2;
-  const moonY = 250;
+  const moonY = theme.moonY;
 
   const moonGlow = context.createRadialGradient(
     STORY_WIDTH / 2,
@@ -224,52 +315,54 @@ export async function createStoryBlob(mark) {
     moonY + moonSize / 2,
     moonSize * 0.72
   );
-  moonGlow.addColorStop(0, 'rgba(255,255,255,0.18)');
-  moonGlow.addColorStop(0.48, 'rgba(188,216,255,0.08)');
-  moonGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  moonGlow.addColorStop(0, theme.moonGlow[0]);
+  moonGlow.addColorStop(0.48, theme.moonGlow[1]);
+  moonGlow.addColorStop(1, theme.moonGlow[2]);
   context.fillStyle = moonGlow;
   context.beginPath();
   context.arc(STORY_WIDTH / 2, moonY + moonSize / 2, moonSize * 0.72, 0, Math.PI * 2);
   context.fill();
 
-  context.strokeStyle = 'rgba(255,255,255,0.16)';
-  context.lineWidth = 2;
-  context.beginPath();
-  context.ellipse(STORY_WIDTH / 2, moonY + moonSize / 2, 500, 250, -0.22, 0, Math.PI * 2);
-  context.stroke();
+  if (theme.showOrbit) {
+    context.strokeStyle = theme.orbitColor;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(STORY_WIDTH / 2, moonY + moonSize / 2, 500, 250, -0.22, 0, Math.PI * 2);
+    context.stroke();
+  }
 
-  drawCircleImage(context, image, moonX, moonY, moonSize);
+  drawCircleImage(context, image, moonX, moonY, moonSize, theme);
   drawLightMark(context, mark, moonX, moonY, moonSize);
 
   context.textAlign = 'left';
-  context.fillStyle = '#f8f4ea';
+  context.fillStyle = theme.brandColor;
   context.font = '700 30px Segoe UI, sans-serif';
   context.fillText('LEAVE A LIGHT', 96, 118);
 
   context.textAlign = 'right';
-  context.fillStyle = '#bdb7aa';
+  context.fillStyle = theme.mutedColor;
   context.font = '26px Segoe UI, sans-serif';
   context.fillText('@t__n_f__ling', STORY_WIDTH - 96, 118);
 
-  drawCenteredStoryText(context, mark);
+  drawCenteredStoryText(context, mark, theme);
 
-  context.strokeStyle = 'rgba(255,255,255,0.16)';
+  context.strokeStyle = theme.footerLine;
   context.beginPath();
   context.moveTo(96, 1685);
   context.lineTo(STORY_WIDTH - 96, 1685);
   context.stroke();
 
   context.textAlign = 'left';
-  context.fillStyle = '#f8f4ea';
+  context.fillStyle = theme.textColor;
   context.font = '30px Segoe UI, sans-serif';
-  context.fillText('same moon, different light', 96, 1746);
+  context.fillText(theme.footerText, 96, 1746);
 
-  context.fillStyle = '#aaa397';
+  context.fillStyle = theme.mutedColor;
   context.font = '24px Segoe UI, sans-serif';
   context.fillText('share your own light at t__n_f__ling', 96, 1790);
 
   context.textAlign = 'right';
-  context.fillStyle = '#d8d2c5';
+  context.fillStyle = theme.mutedColor;
   context.font = '24px Segoe UI, sans-serif';
   context.fillText(mark.time, STORY_WIDTH - 96, 1746);
 

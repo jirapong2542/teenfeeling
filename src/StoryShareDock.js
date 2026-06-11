@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { createStoryBlob, getStoryCaption } from './storyCard';
+import { STORY_THEMES, createStoryBlob, getStoryCaption } from './storyCard';
 
 function StoryShareDock({ moonImage, mark }) {
   const [status, setStatus] = useState('');
   const [isSharing, setIsSharing] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState(STORY_THEMES[0].id);
+  const selectedTheme = STORY_THEMES.find((theme) => theme.id === selectedThemeId) || STORY_THEMES[0];
 
   useEffect(() => {
     setStatus('');
@@ -17,11 +19,11 @@ function StoryShareDock({ moonImage, mark }) {
     try {
       setIsSharing(true);
       setStatus('กำลังสร้างภาพสำหรับ Story...');
-      const blob = await createStoryBlob(mark);
+      const blob = await createStoryBlob(mark, selectedThemeId);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `moon-light-${mark.id}.png`;
+      link.download = `moon-light-${selectedThemeId}-${mark.id}.png`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 600);
       setStatus('ดาวน์โหลดภาพแล้ว เปิด Instagram แล้วอัปลง Story ได้เลย');
@@ -36,8 +38,8 @@ function StoryShareDock({ moonImage, mark }) {
     try {
       setIsSharing(true);
       setStatus('กำลังสร้างภาพสำหรับ Instagram Story...');
-      const blob = await createStoryBlob(mark);
-      const file = new File([blob], `moon-light-${mark.id}.png`, { type: 'image/png' });
+      const blob = await createStoryBlob(mark, selectedThemeId);
+      const file = new File([blob], `moon-light-${selectedThemeId}-${mark.id}.png`, { type: 'image/png' });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -79,7 +81,7 @@ function StoryShareDock({ moonImage, mark }) {
 
   return (
     <div className='story-dock' aria-live='polite'>
-      <div className='story-preview'>
+      <div className={`story-preview theme-${selectedThemeId}`}>
         <span className='story-brand'>leave a light</span>
         <img src={moonImage} alt='' />
         <span
@@ -97,8 +99,27 @@ function StoryShareDock({ moonImage, mark }) {
       </div>
 
       <div className='story-actions'>
+        <div className='story-theme-picker' aria-label='เลือกธีม Story'>
+          {STORY_THEMES.map((theme) => (
+            <button
+              aria-pressed={selectedThemeId === theme.id}
+              className={selectedThemeId === theme.id ? 'theme-chip active' : 'theme-chip'}
+              disabled={isSharing}
+              key={theme.id}
+              onClick={() => {
+                setSelectedThemeId(theme.id);
+                setStatus('');
+              }}
+              type='button'
+            >
+              <span>{theme.label}</span>
+              <small>{theme.description}</small>
+            </button>
+          ))}
+        </div>
+        <p className='selected-theme-note'>ธีมที่เลือก: {selectedTheme.label}</p>
         <p>{status || 'กดแชร์บนมือถือ แล้วเลือก Instagram หรือ Stories จาก share sheet'}</p>
-        <button disabled={isSharing} onClick={shareStory} type='button'>
+        <button className='story-action-primary' disabled={isSharing} onClick={shareStory} type='button'>
           {isSharing ? 'กำลังสร้างภาพ...' : 'แชร์ลง IG Story'}
         </button>
         <button disabled={isSharing} onClick={downloadStory} type='button'>
