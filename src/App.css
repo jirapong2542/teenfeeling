@@ -488,6 +488,14 @@ h1 {
   color: #80796e;
 }
 
+.moderation-note {
+  display: block;
+  margin-top: 9px;
+  color: #8f887d;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
 .composer-footer {
   display: flex;
   align-items: center;

@@ -3,6 +3,7 @@ import './App.css';
 import moonFull from './1.jpg';
 import DevelopmentNotice from './DevelopmentNotice';
 import StoryShareDock from './StoryShareDock';
+import { validateMoonMessage } from './moderation';
 
 const STORAGE_KEY = 'leave-a-light-marks';
 
@@ -107,10 +108,10 @@ function App() {
 
   const leaveLight = (event) => {
     event.preventDefault();
-    const cleanMessage = message.trim();
+    const moderation = validateMoonMessage(message);
 
-    if (!cleanMessage) {
-      setFormError('ฝากไว้สักหนึ่งประโยคก่อนนะ');
+    if (!moderation.isValid) {
+      setFormError(moderation.error);
       return;
     }
 
@@ -118,7 +119,7 @@ function App() {
       id: Date.now().toString(),
       ...createMoonPosition(),
       mood: selectedMood,
-      message: cleanMessage,
+      message: moderation.message,
       time: getTime(),
     };
     const nextMarks = [nextMark, ...marks].slice(0, 36);
@@ -242,6 +243,9 @@ function App() {
                 rows='4'
                 value={message}
               />
+              <small className='moderation-note'>
+                ระบบจะกันลิงก์ ข้อมูลติดต่อ คำหยาบ และข้อความสแปมก่อนฝากขึ้นพระจันทร์
+              </small>
             </label>
 
             <div className='composer-footer'>
