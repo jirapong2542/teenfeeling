@@ -2,6 +2,8 @@ import moonFull from './1.jpg';
 
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
+const STORY_TEXT_TOP = 1148;
+const STORY_TEXT_BOTTOM = 1594;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -31,6 +33,16 @@ function getStableStars(seed, amount) {
   });
 }
 
+function trimLineToWidth(context, line, maxWidth) {
+  let nextLine = line;
+
+  while (nextLine.length > 1 && context.measureText(`${nextLine}...`).width > maxWidth) {
+    nextLine = nextLine.slice(0, -1);
+  }
+
+  return `${nextLine}...`;
+}
+
 function getWrappedLines(context, text, maxWidth, maxLines = 4) {
   const segments = Array.from(text);
   const lines = [];
@@ -55,41 +67,69 @@ function getWrappedLines(context, text, maxWidth, maxLines = 4) {
   const visibleLines = lines.slice(0, maxLines);
 
   if (lines.length > maxLines) {
-    visibleLines[maxLines - 1] = `${visibleLines[maxLines - 1].slice(0, -1)}...`;
+    visibleLines[maxLines - 1] = trimLineToWidth(context, visibleLines[maxLines - 1], maxWidth);
   }
 
   return visibleLines;
 }
 
+function getStoryTextLayout(context, message) {
+  const options = [
+    { fontSize: 46, lineHeight: 66, maxLines: 4, maxWidth: 780 },
+    { fontSize: 42, lineHeight: 60, maxLines: 4, maxWidth: 780 },
+    { fontSize: 38, lineHeight: 56, maxLines: 5, maxWidth: 780 },
+    { fontSize: 34, lineHeight: 52, maxLines: 5, maxWidth: 760 },
+  ];
+  const safeHeight = STORY_TEXT_BOTTOM - STORY_TEXT_TOP;
+
+  for (let index = 0; index < options.length; index += 1) {
+    const option = options[index];
+    const moodHeight = 34;
+    const moodGap = option.fontSize > 40 ? 42 : 34;
+    const subtitleGap = option.fontSize > 40 ? 38 : 30;
+    const subtitleHeight = 32;
+
+    context.font = `700 ${option.fontSize}px Segoe UI, sans-serif`;
+    const lines = getWrappedLines(context, `"${message}"`, option.maxWidth, option.maxLines);
+    const messageHeight = lines.length * option.lineHeight;
+    const blockHeight = moodHeight + moodGap + messageHeight + subtitleGap + subtitleHeight;
+
+    if (blockHeight <= safeHeight || index === options.length - 1) {
+      return {
+        ...option,
+        lines,
+        moodHeight,
+        moodGap,
+        subtitleGap,
+        subtitleHeight,
+        blockHeight,
+      };
+    }
+  }
+
+  return null;
+}
+
 function drawCenteredStoryText(context, mark) {
   const centerX = STORY_WIDTH / 2;
-  const messageLineHeight = 66;
-  const moodHeight = 34;
-  const moodGap = 46;
-  const subtitleGap = 42;
-  const subtitleHeight = 32;
+  const layout = getStoryTextLayout(context, mark.message);
+  const blockTop = STORY_TEXT_TOP + (STORY_TEXT_BOTTOM - STORY_TEXT_TOP - layout.blockHeight) / 2;
+  const moodY = blockTop + layout.moodHeight / 2;
+  const messageTop = blockTop + layout.moodHeight + layout.moodGap;
+  const subtitleY = messageTop + layout.lines.length * layout.lineHeight + layout.subtitleGap + layout.subtitleHeight / 2;
 
   context.save();
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-
-  context.font = '700 46px Segoe UI, sans-serif';
-  const messageLines = getWrappedLines(context, `"${mark.message}"`, 820, 4);
-  const messageHeight = messageLines.length * messageLineHeight;
-  const blockHeight = moodHeight + moodGap + messageHeight + subtitleGap + subtitleHeight;
-  const blockTop = 1370 - blockHeight / 2;
-  const moodY = blockTop + moodHeight / 2;
-  const messageTop = blockTop + moodHeight + moodGap;
-  const subtitleY = messageTop + messageHeight + subtitleGap + subtitleHeight / 2;
 
   context.fillStyle = mark.mood.color;
   context.font = '700 28px Segoe UI, sans-serif';
   context.fillText(mark.mood.label, centerX, moodY);
 
   context.fillStyle = '#f8f4ea';
-  context.font = '700 46px Segoe UI, sans-serif';
-  messageLines.forEach((line, index) => {
-    context.fillText(line, centerX, messageTop + index * messageLineHeight + messageLineHeight / 2);
+  context.font = `700 ${layout.fontSize}px Segoe UI, sans-serif`;
+  layout.lines.forEach((line, index) => {
+    context.fillText(line, centerX, messageTop + index * layout.lineHeight + layout.lineHeight / 2);
   });
 
   context.fillStyle = '#aaa397';
