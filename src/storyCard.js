@@ -2,8 +2,9 @@ import moonFull from './1.jpg';
 
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
-const STORY_TEXT_TOP = 1148;
-const STORY_TEXT_BOTTOM = 1594;
+const STORY_TEXT_TOP = 1092;
+const STORY_TEXT_BOTTOM = 1584;
+const STORY_TEXT_WIDTH = 700;
 
 export const STORY_THEMES = [
   {
@@ -120,20 +121,31 @@ function getStableStars(seed, amount) {
   });
 }
 
-function trimLineToWidth(context, line, maxWidth) {
-  let nextLine = line;
+function getTextSegments(text) {
+  if (window.Intl?.Segmenter) {
+    return Array.from(new Intl.Segmenter('th', { granularity: 'grapheme' }).segment(text), (item) => item.segment);
+  }
 
-  while (nextLine.length > 1 && context.measureText(`${nextLine}...`).width > maxWidth) {
-    nextLine = nextLine.slice(0, -1);
+  return Array.from(text);
+}
+
+function trimLineToWidth(context, line, maxWidth) {
+  const segments = getTextSegments(line);
+  let nextLine = segments.join('');
+
+  while (segments.length > 1 && context.measureText(`${nextLine}...`).width > maxWidth) {
+    segments.pop();
+    nextLine = segments.join('');
   }
 
   return `${nextLine}...`;
 }
 
 function getWrappedLines(context, text, maxWidth, maxLines = 4) {
-  const segments = Array.from(text);
+  const segments = getTextSegments(text);
   const lines = [];
   let line = '';
+  let wasClamped = false;
 
   segments.forEach((segment) => {
     const testLine = line + segment;
@@ -154,19 +166,27 @@ function getWrappedLines(context, text, maxWidth, maxLines = 4) {
   const visibleLines = lines.slice(0, maxLines);
 
   if (lines.length > maxLines) {
+    wasClamped = true;
     visibleLines[maxLines - 1] = trimLineToWidth(context, visibleLines[maxLines - 1], maxWidth);
   }
 
-  return visibleLines;
+  return {
+    lines: visibleLines,
+    wasClamped,
+  };
 }
 
 function getStoryTextLayout(context, message) {
-  const options = [
-    { fontSize: 46, lineHeight: 66, maxLines: 4, maxWidth: 780 },
-    { fontSize: 42, lineHeight: 60, maxLines: 4, maxWidth: 780 },
-    { fontSize: 38, lineHeight: 56, maxLines: 5, maxWidth: 780 },
-    { fontSize: 34, lineHeight: 52, maxLines: 5, maxWidth: 760 },
-  ];
+  const options = Array.from({ length: 11 }, (_, index) => {
+    const fontSize = 46 - index * 2;
+
+    return {
+      fontSize,
+      lineHeight: Math.round(fontSize * 1.34),
+      maxLines: fontSize >= 38 ? 4 : 5,
+      maxWidth: fontSize >= 40 ? STORY_TEXT_WIDTH : STORY_TEXT_WIDTH + 36,
+    };
+  });
   const safeHeight = STORY_TEXT_BOTTOM - STORY_TEXT_TOP;
 
   for (let index = 0; index < options.length; index += 1) {
@@ -177,11 +197,12 @@ function getStoryTextLayout(context, message) {
     const subtitleHeight = 32;
 
     context.font = `700 ${option.fontSize}px Segoe UI, sans-serif`;
-    const lines = getWrappedLines(context, `"${message}"`, option.maxWidth, option.maxLines);
+    const wrapped = getWrappedLines(context, `"${message}"`, option.maxWidth, option.maxLines);
+    const lines = wrapped.lines;
     const messageHeight = lines.length * option.lineHeight;
     const blockHeight = moodHeight + moodGap + messageHeight + subtitleGap + subtitleHeight;
 
-    if (blockHeight <= safeHeight || index === options.length - 1) {
+    if ((blockHeight <= safeHeight && !wrapped.wasClamped) || index === options.length - 1) {
       return {
         ...option,
         lines,
@@ -206,6 +227,9 @@ function drawCenteredStoryText(context, mark, theme) {
   const subtitleY = messageTop + layout.lines.length * layout.lineHeight + layout.subtitleGap + layout.subtitleHeight / 2;
 
   context.save();
+  context.beginPath();
+  context.rect((STORY_WIDTH - 820) / 2, STORY_TEXT_TOP, 820, STORY_TEXT_BOTTOM - STORY_TEXT_TOP);
+  context.clip();
   context.textAlign = 'center';
   context.textBaseline = 'middle';
 

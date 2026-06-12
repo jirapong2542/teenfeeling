@@ -54,7 +54,7 @@ function StoryShareDock({ moonImage, mark }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `moon-light-${mark.id}.png`;
+      link.download = `moon-light-${selectedThemeId}-${mark.id}.png`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 600);
       setStatus('เครื่องนี้แชร์ตรงไม่ได้ เลยดาวน์โหลดภาพให้แทน');
