@@ -2,9 +2,13 @@ import moonFull from './1.jpg';
 
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
-const STORY_TEXT_TOP = 1092;
-const STORY_TEXT_BOTTOM = 1584;
-const STORY_TEXT_WIDTH = 700;
+const STORY_TEXT_BOX = {
+  x: 150,
+  y: 1118,
+  width: 780,
+  height: 360,
+};
+const STORY_TEXT_WIDTH = 740;
 
 export const STORY_THEMES = [
   {
@@ -184,10 +188,10 @@ function getStoryTextLayout(context, message) {
       fontSize,
       lineHeight: Math.round(fontSize * 1.34),
       maxLines: fontSize >= 38 ? 4 : 5,
-      maxWidth: fontSize >= 40 ? STORY_TEXT_WIDTH : STORY_TEXT_WIDTH + 36,
+      maxWidth: fontSize >= 40 ? STORY_TEXT_WIDTH : STORY_TEXT_BOX.width,
     };
   });
-  const safeHeight = STORY_TEXT_BOTTOM - STORY_TEXT_TOP;
+  const safeHeight = STORY_TEXT_BOX.height;
 
   for (let index = 0; index < options.length; index += 1) {
     const option = options[index];
@@ -218,33 +222,44 @@ function getStoryTextLayout(context, message) {
   return null;
 }
 
+function drawCenteredLine(context, text, centerX, y, maxWidth) {
+  const measuredWidth = context.measureText(text).width;
+  const drawWidth = Math.min(measuredWidth, maxWidth);
+  const drawX = centerX - drawWidth / 2;
+
+  context.save();
+  context.textAlign = 'left';
+  context.fillText(text, drawX, y, maxWidth);
+  context.restore();
+}
+
 function drawCenteredStoryText(context, mark, theme) {
-  const centerX = STORY_WIDTH / 2;
+  const centerX = STORY_TEXT_BOX.x + STORY_TEXT_BOX.width / 2;
   const layout = getStoryTextLayout(context, mark.message);
-  const blockTop = STORY_TEXT_TOP + (STORY_TEXT_BOTTOM - STORY_TEXT_TOP - layout.blockHeight) / 2;
+  const blockTop = STORY_TEXT_BOX.y + (STORY_TEXT_BOX.height - layout.blockHeight) / 2;
   const moodY = blockTop + layout.moodHeight / 2;
   const messageTop = blockTop + layout.moodHeight + layout.moodGap;
   const subtitleY = messageTop + layout.lines.length * layout.lineHeight + layout.subtitleGap + layout.subtitleHeight / 2;
 
   context.save();
   context.beginPath();
-  context.rect((STORY_WIDTH - 820) / 2, STORY_TEXT_TOP, 820, STORY_TEXT_BOTTOM - STORY_TEXT_TOP);
+  context.rect(STORY_TEXT_BOX.x, STORY_TEXT_BOX.y, STORY_TEXT_BOX.width, STORY_TEXT_BOX.height);
   context.clip();
-  context.textAlign = 'center';
   context.textBaseline = 'middle';
 
   context.fillStyle = mark.mood.color;
   context.font = '700 28px Segoe UI, sans-serif';
-  context.fillText(mark.mood.label, centerX, moodY);
+  drawCenteredLine(context, mark.mood.label, centerX, moodY, STORY_TEXT_BOX.width);
 
   context.fillStyle = theme.textColor;
   context.font = `700 ${layout.fontSize}px Segoe UI, sans-serif`;
   layout.lines.forEach((line, index) => {
-    context.fillText(line, centerX, messageTop + index * layout.lineHeight + layout.lineHeight / 2);
+    drawCenteredLine(context, line, centerX, messageTop + index * layout.lineHeight + layout.lineHeight / 2, layout.maxWidth);
   });
 
   context.fillStyle = theme.mutedColor;
   context.font = '26px Segoe UI, sans-serif';
+  context.textAlign = 'center';
   context.fillText('ฝากแสงไว้บนพระจันทร์ดวงเดียวกัน', centerX, subtitleY);
   context.restore();
 }
