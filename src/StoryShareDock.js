@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { STORY_THEMES, createStoryBlob, getStoryCaption } from './storyCard';
 
-function StoryShareDock({ moonImage, mark }) {
+function StoryShareDock({ moonImage, mark, onClose }) {
   const [status, setStatus] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState(STORY_THEMES[0].id);
@@ -81,6 +81,9 @@ function StoryShareDock({ moonImage, mark }) {
 
   return (
     <div className='story-dock' aria-live='polite'>
+      <button className='story-dock-close' onClick={onClose} type='button'>
+        ปิด
+      </button>
       <div className={`story-preview theme-${selectedThemeId}`}>
         <span className='story-brand'>leave a light</span>
         <img src={moonImage} alt='' />

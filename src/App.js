@@ -4,11 +4,14 @@ import moonFull from './1.jpg';
 import DevelopmentNotice from './DevelopmentNotice';
 import MoonWall from './MoonWall';
 import StoryShareDock from './StoryShareDock';
-import { createMoonMark, fetchMoonMarks } from './moonMarksApi';
+import TonightMoonPage from './TonightMoonPage';
+import { createMoonMark, fetchMoonMarks, fetchTonightMoonCount } from './moonMarksApi';
 import { validateMoonMessage } from './moderation';
 import { isSupabaseConfigured } from './supabaseClient';
 
 const STORAGE_KEY = 'leave-a-light-marks';
+const CLOUD_REFRESH_INTERVAL = 30000;
+const TONIGHT_MOON_PATH = '/tonight-moon';
 
 const moods = [
   { id: 'missing', label: 'คิดถึง', color: '#f6ead2', glow: 'rgba(246, 234, 210, 0.72)' },
@@ -88,7 +91,12 @@ function createMoonPosition() {
   };
 }
 
+function getCurrentPath() {
+  return window.location.pathname === TONIGHT_MOON_PATH ? TONIGHT_MOON_PATH : '/';
+}
+
 function App() {
+  const [currentPath, setCurrentPath] = useState(getCurrentPath);
   const [marks, setMarks] = useState(getInitialMarks);
   const [selectedMood, setSelectedMood] = useState(moods[0]);
   const [message, setMessage] = useState('');
@@ -98,16 +106,32 @@ function App() {
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [dataStatus, setDataStatus] = useState(isSupabaseConfigured ? 'กำลังโหลดแสงจาก cloud...' : 'โหมดทดลอง: เก็บข้อมูลในเครื่องนี้');
+  const [tonightCount, setTonightCount] = useState(marks.length);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(getCurrentPath());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadMarks() {
+    async function loadMarks(shouldFocusLatest = false) {
       if (!isSupabaseConfigured) {
         return;
       }
 
-      const result = await fetchMoonMarks(moods);
+      const [result, countResult] = await Promise.all([
+        fetchMoonMarks(moods),
+        fetchTonightMoonCount(),
+      ]);
 
       if (!isMounted) {
         return;
@@ -118,10 +142,22 @@ function App() {
         return;
       }
 
+      if (!countResult.error && typeof countResult.count === 'number') {
+        setTonightCount(countResult.count);
+      } else {
+        setTonightCount(result.marks.length);
+      }
+
       setMarks(result.marks);
 
       if (result.marks.length > 0) {
-        setActiveMark(result.marks[0]);
+        setActiveMark((currentMark) => {
+          if (!shouldFocusLatest && currentMark && result.marks.some((mark) => mark.id === currentMark.id)) {
+            return currentMark;
+          }
+
+          return result.marks[0];
+        });
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result.marks));
         setDataStatus('เชื่อมข้อมูลจริงแล้ว ทุกคนจะเห็นแสงเดียวกัน');
         return;
@@ -133,10 +169,14 @@ function App() {
       setDataStatus('เชื่อมข้อมูลจริงแล้ว ยังไม่มีใครฝากแสงบนพระจันทร์');
     }
 
-    loadMarks();
+    loadMarks(true);
+    const refreshTimer = window.setInterval(() => {
+      loadMarks(false);
+    }, CLOUD_REFRESH_INTERVAL);
 
     return () => {
       isMounted = false;
+      window.clearInterval(refreshTimer);
     };
   }, []);
 
@@ -155,6 +195,12 @@ function App() {
   const selectMark = (mark) => {
     setActiveMark(mark);
     setStoryMark(mark);
+  };
+
+  const navigateTo = (path) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(getCurrentPath());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const leaveLight = async (event) => {
@@ -186,6 +232,7 @@ function App() {
       const nextMarks = [savedMark, ...marks].slice(0, 36);
 
       saveMarks(nextMarks);
+      setTonightCount((currentCount) => (result.error ? nextMarks.length : Math.max(currentCount + 1, nextMarks.length)));
       setActiveMark(savedMark);
       setStoryMark(savedMark);
       setComposerOpen(false);
@@ -200,6 +247,15 @@ function App() {
   return (
     <main className='app-shell'>
       <DevelopmentNotice />
+
+      {currentPath === TONIGHT_MOON_PATH ? (
+        <TonightMoonPage
+          moodCounts={moodCounts}
+          onNavigateHome={() => navigateTo('/')}
+          tonightCount={tonightCount}
+        />
+      ) : (
+        <>
 
       <section className='moon-room' aria-label='Leave a light on the moon'>
         <div className='star-field' />
@@ -247,6 +303,9 @@ function App() {
           <button className='primary-action' onClick={() => setComposerOpen(true)} type='button'>
             ฝากรอยของคุณ
           </button>
+          <button className='secondary-action' onClick={() => navigateTo(TONIGHT_MOON_PATH)} type='button'>
+            ดูพระจันทร์คืนนี้
+          </button>
         </div>
 
         <aside className='whisper-panel' aria-live='polite'>
@@ -259,8 +318,9 @@ function App() {
         </aside>
 
         <div className='moon-stats'>
-          <strong>{marks.length}</strong>
+          <strong>{tonightCount}</strong>
           <span>รอยแสงบนพระจันทร์คืนนี้</span>
+          {isSupabaseConfigured && <small>อัปเดตจาก Supabase ทุก 30 วินาที</small>}
         </div>
 
         <div className='mood-ribbon' aria-label='Mood summary'>
@@ -278,6 +338,8 @@ function App() {
         onOpenComposer={() => setComposerOpen(true)}
         onSelectMark={selectMark}
       />
+        </>
+      )}
 
       {composerOpen && (
         <div className='modal-layer' role='presentation'>
@@ -331,7 +393,9 @@ function App() {
         </div>
       )}
 
-      <StoryShareDock mark={storyMark} moonImage={moonFull} />
+      {currentPath !== TONIGHT_MOON_PATH && (
+        <StoryShareDock mark={storyMark} moonImage={moonFull} onClose={() => setStoryMark(null)} />
+      )}
     </main>
   );
 }

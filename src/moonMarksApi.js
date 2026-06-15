@@ -2,6 +2,17 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 const TABLE_NAME = 'moon_marks';
 
+function getTonightStartIso(referenceDate = new Date()) {
+  const start = new Date(referenceDate);
+
+  if (start.getHours() < 6) {
+    start.setDate(start.getDate() - 1);
+  }
+
+  start.setHours(18, 0, 0, 0);
+  return start.toISOString();
+}
+
 function toMark(row, moods) {
   const mood = moods.find((item) => item.id === row.mood_id) || moods[0];
 
@@ -48,6 +59,32 @@ export async function fetchMoonMarks(moods) {
 
   return {
     marks: data.map((row) => toMark(row, moods)),
+    error: '',
+  };
+}
+
+export async function fetchTonightMoonCount() {
+  if (!isSupabaseConfigured) {
+    return {
+      count: null,
+      error: 'Supabase ยังไม่ได้ตั้งค่า env',
+    };
+  }
+
+  const { count, error } = await supabase
+    .from(TABLE_NAME)
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', getTonightStartIso());
+
+  if (error) {
+    return {
+      count: null,
+      error: error.message,
+    };
+  }
+
+  return {
+    count: count || 0,
     error: '',
   };
 }
