@@ -69,6 +69,18 @@
   text-transform: uppercase;
 }
 
+.data-status {
+  max-width: min(420px, 44vw);
+  padding: 7px 12px;
+  color: #bdb7aa;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
 .moon-stage {
   position: absolute;
   inset: 0;
@@ -988,6 +1000,18 @@ h1 {
   .moon-room {
     padding: 18px 16px 220px;
     row-gap: 18px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .data-status {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+    text-align: left;
   }
 
   .moon-visual {

@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import moonFull from './1.jpg';
 import DevelopmentNotice from './DevelopmentNotice';
 import MoonWall from './MoonWall';
 import StoryShareDock from './StoryShareDock';
+import { createMoonMark, fetchMoonMarks } from './moonMarksApi';
 import { validateMoonMessage } from './moderation';
+import { isSupabaseConfigured } from './supabaseClient';
 
 const STORAGE_KEY = 'leave-a-light-marks';
 
@@ -94,6 +96,49 @@ function App() {
   const [storyMark, setStoryMark] = useState(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [formError, setFormError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [dataStatus, setDataStatus] = useState(isSupabaseConfigured ? 'กำลังโหลดแสงจาก cloud...' : 'โหมดทดลอง: เก็บข้อมูลในเครื่องนี้');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMarks() {
+      if (!isSupabaseConfigured) {
+        return;
+      }
+
+      const result = await fetchMoonMarks(moods);
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.error) {
+        setDataStatus('เชื่อม Supabase ไม่สำเร็จ ตอนนี้ใช้ข้อมูลในเครื่องนี้ก่อน');
+        return;
+      }
+
+      setMarks(result.marks);
+
+      if (result.marks.length > 0) {
+        setActiveMark(result.marks[0]);
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result.marks));
+        setDataStatus('เชื่อมข้อมูลจริงแล้ว ทุกคนจะเห็นแสงเดียวกัน');
+        return;
+      }
+
+      setActiveMark(null);
+      setStoryMark(null);
+      window.localStorage.removeItem(STORAGE_KEY);
+      setDataStatus('เชื่อมข้อมูลจริงแล้ว ยังไม่มีใครฝากแสงบนพระจันทร์');
+    }
+
+    loadMarks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const moodCounts = useMemo(() => {
     return moods.map((mood) => ({
@@ -112,8 +157,12 @@ function App() {
     setStoryMark(mark);
   };
 
-  const leaveLight = (event) => {
+  const leaveLight = async (event) => {
     event.preventDefault();
+    if (isSaving) {
+      return;
+    }
+
     const moderation = validateMoonMessage(message);
 
     if (!moderation.isValid) {
@@ -128,14 +177,24 @@ function App() {
       message: moderation.message,
       time: getTime(),
     };
-    const nextMarks = [nextMark, ...marks].slice(0, 36);
 
-    saveMarks(nextMarks);
-    setActiveMark(nextMark);
-    setStoryMark(nextMark);
-    setComposerOpen(false);
-    setMessage('');
-    setFormError('');
+    setIsSaving(true);
+
+    try {
+      const result = await createMoonMark(nextMark, moods);
+      const savedMark = result.mark;
+      const nextMarks = [savedMark, ...marks].slice(0, 36);
+
+      saveMarks(nextMarks);
+      setActiveMark(savedMark);
+      setStoryMark(savedMark);
+      setComposerOpen(false);
+      setMessage('');
+      setFormError('');
+      setDataStatus(result.error ? 'บันทึกบน cloud ไม่สำเร็จ เลยเก็บไว้ในเครื่องนี้ก่อน' : 'บันทึกขึ้น cloud แล้ว');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -149,6 +208,7 @@ function App() {
           <a className='brand' href='https://www.instagram.com/t__n_f__ling/'>
             t__n_f__ling
           </a>
+          <span className='data-status'>{dataStatus}</span>
           <a className='ig-link' href='https://www.instagram.com/t__n_f__ling/'>
             instagram
           </a>
@@ -163,7 +223,7 @@ function App() {
             {marks.map((mark) => (
               <button
                 aria-label={`อ่านข้อความอารมณ์${mark.mood.label}`}
-                className={activeMark.id === mark.id ? 'moon-light active' : 'moon-light'}
+                className={activeMark?.id === mark.id ? 'moon-light active' : 'moon-light'}
                 key={mark.id}
                 onClick={() => {
                   selectMark(mark);
@@ -191,10 +251,10 @@ function App() {
 
         <aside className='whisper-panel' aria-live='polite'>
           <span className='panel-kicker'>ข้อความจากแสงนี้</span>
-          <blockquote>{activeMark.message}</blockquote>
+          <blockquote>{activeMark ? activeMark.message : 'ยังไม่มีข้อความ ฝากแสงแรกไว้บนพระจันทร์ได้เลย'}</blockquote>
           <div className='panel-meta'>
-            <span>{activeMark.mood.label}</span>
-            <span>{activeMark.time}</span>
+            <span>{activeMark ? activeMark.mood.label : 'แสงแรก'}</span>
+            <span>{activeMark ? activeMark.time : '--:--'}</span>
           </div>
         </aside>
 
@@ -262,8 +322,8 @@ function App() {
 
             <div className='composer-footer'>
               <span>{message.length}/90</span>
-              <button className='submit-light' type='submit'>
-                ฝากไว้บนพระจันทร์
+              <button className='submit-light' disabled={isSaving} type='submit'>
+                {isSaving ? 'กำลังฝากแสง...' : 'ฝากไว้บนพระจันทร์'}
               </button>
             </div>
             {formError && <p className='form-error'>{formError}</p>}
