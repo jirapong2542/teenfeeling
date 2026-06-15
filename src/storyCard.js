@@ -125,12 +125,44 @@ function getStableStars(seed, amount) {
   });
 }
 
-function getTextSegments(text) {
+function getTextSegments(text, granularity = 'grapheme') {
   if (window.Intl?.Segmenter) {
-    return Array.from(new Intl.Segmenter('th', { granularity: 'grapheme' }).segment(text), (item) => item.segment);
+    return Array.from(new Intl.Segmenter('th', { granularity }).segment(text), (item) => item.segment);
+  }
+
+  if (granularity === 'word') {
+    return text.split(/(\s+)/).filter(Boolean);
   }
 
   return Array.from(text);
+}
+
+function splitLongSegment(context, segment, maxWidth) {
+  if (context.measureText(segment).width <= maxWidth) {
+    return [segment];
+  }
+
+  const graphemes = getTextSegments(segment, 'grapheme');
+  const chunks = [];
+  let chunk = '';
+
+  graphemes.forEach((grapheme) => {
+    const testChunk = chunk + grapheme;
+
+    if (context.measureText(testChunk).width > maxWidth && chunk) {
+      chunks.push(chunk);
+      chunk = grapheme;
+      return;
+    }
+
+    chunk = testChunk;
+  });
+
+  if (chunk) {
+    chunks.push(chunk);
+  }
+
+  return chunks;
 }
 
 function trimLineToWidth(context, line, maxWidth) {
@@ -146,25 +178,26 @@ function trimLineToWidth(context, line, maxWidth) {
 }
 
 function getWrappedLines(context, text, maxWidth, maxLines = 4) {
-  const segments = getTextSegments(text);
+  const segments = getTextSegments(text, 'word').flatMap((segment) => splitLongSegment(context, segment, maxWidth));
   const lines = [];
   let line = '';
   let wasClamped = false;
 
   segments.forEach((segment) => {
+    const isWhitespace = segment.trim() === '';
     const testLine = line + segment;
 
     if (context.measureText(testLine).width > maxWidth && line) {
-      lines.push(line);
-      line = segment;
+      lines.push(line.trim());
+      line = isWhitespace ? '' : segment.trimStart();
       return;
     }
 
     line = testLine;
   });
 
-  if (line) {
-    lines.push(line);
+  if (line.trim()) {
+    lines.push(line.trim());
   }
 
   const visibleLines = lines.slice(0, maxLines);
