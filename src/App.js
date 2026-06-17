@@ -5,7 +5,7 @@ import DevelopmentNotice from './DevelopmentNotice';
 import MoonWall from './MoonWall';
 import StoryShareDock from './StoryShareDock';
 import TonightMoonPage from './TonightMoonPage';
-import { createMoonMark, fetchMoonMarks, fetchTonightMoonCount } from './moonMarksApi';
+import { createMoonMark, fetchMoonMarks, fetchTonightMoonCount, getTonightStartIso } from './moonMarksApi';
 import { validateMoonMessage } from './moderation';
 import { isSupabaseConfigured } from './supabaseClient';
 
@@ -65,10 +65,23 @@ function normalizeMark(mark) {
   };
 }
 
+function filterTonightMarks(marks) {
+  const tonightStart = getTonightStartIso();
+
+  return marks.filter((mark) => mark.createdAt && mark.createdAt >= tonightStart);
+}
+
 function getInitialMarks() {
+  if (isSupabaseConfigured) {
+    return [];
+  }
+
   try {
     const storedMarks = window.localStorage.getItem(STORAGE_KEY);
-    return storedMarks ? JSON.parse(storedMarks).map(normalizeMark) : seedMarks;
+    const parsedMarks = storedMarks ? JSON.parse(storedMarks).map(normalizeMark) : [];
+    const tonightMarks = filterTonightMarks(parsedMarks);
+
+    return tonightMarks.length > 0 ? tonightMarks : seedMarks;
   } catch {
     return seedMarks;
   }
@@ -79,6 +92,27 @@ function getTime() {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date());
+}
+
+function getNextResetDate(referenceDate = new Date()) {
+  const nextReset = new Date(referenceDate);
+  nextReset.setHours(18, 0, 0, 0);
+
+  if (referenceDate >= nextReset) {
+    nextReset.setDate(nextReset.getDate() + 1);
+  }
+
+  return nextReset;
+}
+
+function getResetCountdownText(referenceDate = new Date()) {
+  const diffMs = Math.max(0, getNextResetDate(referenceDate).getTime() - referenceDate.getTime());
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, '0')} ชม. ${String(minutes).padStart(2, '0')} นาที ${String(seconds).padStart(2, '0')} วิ`;
 }
 
 function createMoonPosition() {
@@ -100,13 +134,14 @@ function App() {
   const [marks, setMarks] = useState(getInitialMarks);
   const [selectedMood, setSelectedMood] = useState(moods[0]);
   const [message, setMessage] = useState('');
-  const [activeMark, setActiveMark] = useState(seedMarks[0]);
+  const [activeMark, setActiveMark] = useState(() => getInitialMarks()[0] || null);
   const [storyMark, setStoryMark] = useState(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [dataStatus, setDataStatus] = useState(isSupabaseConfigured ? 'กำลังโหลดแสงจาก cloud...' : 'โหมดทดลอง: เก็บข้อมูลในเครื่องนี้');
   const [tonightCount, setTonightCount] = useState(marks.length);
+  const [resetCountdownText, setResetCountdownText] = useState(() => getResetCountdownText());
 
   useEffect(() => {
     const handlePopState = () => {
@@ -180,6 +215,16 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const countdownTimer = window.setInterval(() => {
+      setResetCountdownText(getResetCountdownText());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(countdownTimer);
+    };
+  }, []);
+
   const moodCounts = useMemo(() => {
     return moods.map((mood) => ({
       ...mood,
@@ -222,6 +267,7 @@ function App() {
       mood: selectedMood,
       message: moderation.message,
       time: getTime(),
+      createdAt: new Date().toISOString(),
     };
 
     setIsSaving(true);
@@ -252,6 +298,7 @@ function App() {
         <TonightMoonPage
           moodCounts={moodCounts}
           onNavigateHome={() => navigateTo('/')}
+          resetCountdownText={resetCountdownText}
           tonightCount={tonightCount}
         />
       ) : (
@@ -265,6 +312,7 @@ function App() {
             t__n_f__ling
           </a>
           <span className='data-status'>{dataStatus}</span>
+          <span className='reset-countdown'>รอบใหม่ใน {resetCountdownText}</span>
           <a className='ig-link' href='https://www.instagram.com/t__n_f__ling/'>
             instagram
           </a>

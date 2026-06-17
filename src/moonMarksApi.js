@@ -2,7 +2,7 @@ import { isSupabaseConfigured, supabase } from './supabaseClient';
 
 const TABLE_NAME = 'moon_marks';
 
-function getTonightStartIso(referenceDate = new Date()) {
+export function getTonightStartIso(referenceDate = new Date()) {
   const start = new Date(referenceDate);
 
   if (start.getHours() < 6) {
@@ -23,6 +23,7 @@ function toMark(row, moods) {
     mood,
     message: row.message,
     time: row.display_time,
+    createdAt: row.created_at,
   };
 }
 
@@ -47,6 +48,7 @@ export async function fetchMoonMarks(moods) {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('id,message,mood_id,x,y,display_time,created_at')
+    .gte('created_at', getTonightStartIso())
     .order('created_at', { ascending: false })
     .limit(36);
 

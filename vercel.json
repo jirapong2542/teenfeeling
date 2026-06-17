@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/tonight-moon",
+      "destination": "/"
+    }
+  ]
+}

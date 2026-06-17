@@ -10,7 +10,7 @@ function formatTonightTime(date) {
   }).format(date);
 }
 
-function TonightMoonPage({ moodCounts, onNavigateHome, tonightCount }) {
+function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonightCount }) {
   const [now, setNow] = useState(() => new Date());
   const phase = useMemo(() => getMoonPhase(now), [now]);
   const dominantMood = useMemo(() => {
@@ -70,6 +70,10 @@ function TonightMoonPage({ moodCounts, onNavigateHome, tonightCount }) {
           <div>
             <span>{tonightCount}</span>
             <small>แสงคืนนี้</small>
+          </div>
+          <div>
+            <span>{resetCountdownText}</span>
+            <small>ก่อนเริ่มรอบใหม่</small>
           </div>
         </div>
       </div>
