@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import BestNightToShoot from './BestNightToShoot';
 import moonFull from './1.jpg';
 import { getMoonPhase } from './moonPhase';
+import PastNightSummary from './PastNightSummary';
 import { createTonightReportBlob } from './tonightReportCard';
 import './TonightMoonPage.css';
 
@@ -12,7 +13,7 @@ function formatTonightTime(date) {
   }).format(date);
 }
 
-function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdown, tonightCount }) {
+function TonightMoonPage({ moodCounts, moods, onNavigateHome, resetCountdown, tonightCount }) {
   const [now, setNow] = useState(() => new Date());
   const [shareStatus, setShareStatus] = useState('');
   const [isSharingReport, setIsSharingReport] = useState(false);
@@ -184,6 +185,8 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdown, tonightCo
         </div>
 
         <BestNightToShoot now={now} />
+
+        <PastNightSummary moods={moods} />
 
         <div className='tonight-feeling-card'>
           <span>คืนนี้บนเว็บ</span>

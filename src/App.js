@@ -301,6 +301,7 @@ function App() {
       {currentPath === TONIGHT_MOON_PATH ? (
         <TonightMoonPage
           moodCounts={moodCounts}
+          moods={moods}
           onNavigateHome={() => navigateTo('/')}
           resetCountdown={moonCycleCountdown}
           tonightCount={tonightCount}
