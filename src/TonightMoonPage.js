@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import BestNightToShoot from './BestNightToShoot';
 import moonFull from './1.jpg';
 import { getMoonPhase } from './moonPhase';
 import { createTonightReportBlob } from './tonightReportCard';
@@ -181,6 +182,8 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdown, tonightCo
             <small>{phase.nextFullMoonText}</small>
           </div>
         </div>
+
+        <BestNightToShoot now={now} />
 
         <div className='tonight-feeling-card'>
           <span>คืนนี้บนเว็บ</span>

@@ -1,0 +1,136 @@
+.best-night-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(244, 239, 229, 0.1);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(218, 195, 139, 0.1), transparent 34%),
+    rgba(244, 239, 229, 0.034);
+}
+
+.best-night-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.best-night-heading span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.best-night-heading strong {
+  color: var(--text);
+  font-size: 1.28rem;
+  line-height: 1.15;
+}
+
+.best-night-heading p,
+.best-night-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.best-night-highlight {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(244, 239, 229, 0.12);
+  border-radius: 8px;
+  background: rgba(1, 2, 4, 0.34);
+}
+
+.best-night-moon,
+.shooting-day i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, rgba(244, 239, 229, 0.12) 0%, rgba(244, 239, 229, 0.92) var(--shoot-illumination), rgba(1, 2, 4, 0.88) var(--shoot-illumination), rgba(1, 2, 4, 0.96) 100%);
+  box-shadow:
+    inset -10px 0 18px rgba(1, 2, 4, 0.35),
+    0 0 28px rgba(244, 239, 229, 0.13);
+}
+
+.best-night-moon {
+  width: 82px;
+}
+
+.best-night-highlight span,
+.best-night-highlight small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.best-night-highlight strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--text);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.shooting-forecast-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.shooting-day {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  min-width: 0;
+  padding: 10px 6px;
+  border: 1px solid rgba(244, 239, 229, 0.09);
+  border-radius: 8px;
+  background: rgba(244, 239, 229, 0.025);
+}
+
+.shooting-day.best {
+  border-color: rgba(218, 195, 139, 0.42);
+  background: rgba(218, 195, 139, 0.08);
+}
+
+.shooting-day span,
+.shooting-day strong {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shooting-day span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.shooting-day i {
+  width: 26px;
+}
+
+.shooting-day strong {
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 620px) {
+  .best-night-highlight {
+    grid-template-columns: 70px 1fr;
+  }
+
+  .best-night-moon {
+    width: 70px;
+  }
+
+  .shooting-forecast-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
