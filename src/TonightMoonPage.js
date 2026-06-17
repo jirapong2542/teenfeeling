@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import moonFull from './1.jpg';
 import { getMoonPhase } from './moonPhase';
+import { createTonightReportBlob } from './tonightReportCard';
 import './TonightMoonPage.css';
 
 function formatTonightTime(date) {
@@ -10,8 +11,10 @@ function formatTonightTime(date) {
   }).format(date);
 }
 
-function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonightCount }) {
+function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdown, tonightCount }) {
   const [now, setNow] = useState(() => new Date());
+  const [shareStatus, setShareStatus] = useState('');
+  const [isSharingReport, setIsSharingReport] = useState(false);
   const phase = useMemo(() => getMoonPhase(now), [now]);
   const dominantMood = useMemo(() => {
     return [...moodCounts].sort((first, second) => second.count - first.count)[0];
@@ -25,6 +28,13 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonig
     : 'ยังรอแสงแรกของคืนนี้';
   const phasePosition = Math.round((phase.age / 29.530588853) * 100);
   const strongestCount = Math.max(...moodCounts.map((mood) => mood.count), 1);
+  const reportPayload = useMemo(() => ({
+    dominantMoodText,
+    phase,
+    resetCountdown,
+    timeText: formatTonightTime(now),
+    tonightCount,
+  }), [dominantMoodText, now, phase, resetCountdown, tonightCount]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -35,6 +45,61 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonig
       window.clearInterval(timer);
     };
   }, []);
+
+  const downloadTonightReport = async () => {
+    try {
+      setIsSharingReport(true);
+      setShareStatus('กำลังสร้างภาพรายงานคืนนี้...');
+      const blob = await createTonightReportBlob(reportPayload);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tonight-moon-report.png';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 600);
+      setShareStatus('ดาวน์โหลดภาพรายงานแล้ว อัปลง IG Story ได้เลย');
+    } catch {
+      setShareStatus('สร้างภาพรายงานไม่สำเร็จ ลองกดอีกครั้งนะ');
+    } finally {
+      setIsSharingReport(false);
+    }
+  };
+
+  const shareTonightReport = async () => {
+    try {
+      setIsSharingReport(true);
+      setShareStatus('กำลังสร้างภาพสำหรับแชร์...');
+      const blob = await createTonightReportBlob(reportPayload);
+      const file = new File([blob], 'tonight-moon-report.png', { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Tonight Moon Report',
+          text: `พระจันทร์คืนนี้ ${phase.thaiName} สว่าง ${phase.illumination}%`,
+        });
+        setShareStatus('เปิดหน้าต่างแชร์แล้ว เลือก Instagram หรือ Stories ได้เลย');
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'tonight-moon-report.png';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 600);
+      setShareStatus('เครื่องนี้แชร์ตรงไม่ได้ เลยดาวน์โหลดภาพให้แทน');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        setShareStatus('ยกเลิกการแชร์แล้ว');
+        return;
+      }
+
+      setShareStatus('แชร์รายงานไม่สำเร็จ ลองดาวน์โหลดภาพแทนนะ');
+    } finally {
+      setIsSharingReport(false);
+    }
+  };
 
   return (
     <section className='tonight-moon-page' id='tonight-moon' aria-label='Tonight moon phase'>
@@ -72,8 +137,8 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonig
             <small>แสงคืนนี้</small>
           </div>
           <div>
-            <span>{resetCountdownText}</span>
-            <small>ก่อนเริ่มรอบใหม่</small>
+            <span>{resetCountdown.text}</span>
+            <small>{resetCountdown.shortLabel}</small>
           </div>
         </div>
       </div>
@@ -145,6 +210,19 @@ function TonightMoonPage({ moodCounts, onNavigateHome, resetCountdownText, tonig
         <button className='tonight-cta' onClick={onNavigateHome} type='button'>
           ฝากแสงของคืนนี้
         </button>
+
+        <div className='tonight-share-panel'>
+          <span>share tonight report</span>
+          <p>{shareStatus || 'สร้างภาพรายงานคืนนี้สำหรับลง Instagram Story'}</p>
+          <div>
+            <button disabled={isSharingReport} onClick={shareTonightReport} type='button'>
+              {isSharingReport ? 'กำลังสร้างภาพ...' : 'แชร์รายงานคืนนี้'}
+            </button>
+            <button disabled={isSharingReport} onClick={downloadTonightReport} type='button'>
+              ดาวน์โหลด PNG
+            </button>
+          </div>
+        </div>
 
         <blockquote className='moon-report-quote'>
           คืนนี้พระจันทร์ไม่ได้มีแค่แสงของตัวเอง แต่มีแสงของคนที่แวะมาฝากไว้ด้วย

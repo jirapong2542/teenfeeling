@@ -375,6 +375,64 @@
   box-shadow: 0 18px 58px rgba(218, 195, 139, 0.2);
 }
 
+.tonight-share-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(244, 239, 229, 0.1);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(218, 195, 139, 0.09), transparent 38%),
+    rgba(244, 239, 229, 0.032);
+}
+
+.tonight-share-panel > span {
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tonight-share-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.tonight-share-panel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.tonight-share-panel button {
+  min-height: 40px;
+  padding: 9px 14px;
+  color: var(--text);
+  background: rgba(244, 239, 229, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.tonight-share-panel button:first-child {
+  color: #050505;
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.tonight-share-panel button:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+}
+
+.tonight-share-panel button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .moon-report-quote {
   margin: 2px 0 0;
   padding-top: 16px;
@@ -445,6 +503,11 @@
 
   .mood-signal-row {
     grid-template-columns: minmax(58px, 0.7fr) minmax(96px, 1fr) 24px;
+  }
+
+  .tonight-share-panel div,
+  .tonight-share-panel button {
+    width: 100%;
   }
 
   .tonight-page-nav {

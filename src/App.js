@@ -94,25 +94,29 @@ function getTime() {
   }).format(new Date());
 }
 
-function getNextResetDate(referenceDate = new Date()) {
-  const nextReset = new Date(referenceDate);
-  nextReset.setHours(18, 0, 0, 0);
-
-  if (referenceDate >= nextReset) {
-    nextReset.setDate(nextReset.getDate() + 1);
-  }
-
-  return nextReset;
-}
-
-function getResetCountdownText(referenceDate = new Date()) {
-  const diffMs = Math.max(0, getNextResetDate(referenceDate).getTime() - referenceDate.getTime());
-  const totalSeconds = Math.floor(diffMs / 1000);
+function formatCountdown(diffMs) {
+  const totalSeconds = Math.floor(Math.max(0, diffMs) / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
   return `${String(hours).padStart(2, '0')} ชม. ${String(minutes).padStart(2, '0')} นาที ${String(seconds).padStart(2, '0')} วิ`;
+}
+
+function getMoonCycleCountdown(referenceDate = new Date()) {
+  const targetDate = new Date(referenceDate);
+  targetDate.setHours(6, 0, 0, 0);
+
+  if (referenceDate >= targetDate) {
+    targetDate.setDate(targetDate.getDate() + 1);
+  }
+
+  return {
+    label: 'รีข้อความใน',
+    shortLabel: 'ก่อนรีข้อความ',
+    reportLabel: 'resets in',
+    text: formatCountdown(targetDate.getTime() - referenceDate.getTime()),
+  };
 }
 
 function createMoonPosition() {
@@ -141,7 +145,7 @@ function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [dataStatus, setDataStatus] = useState(isSupabaseConfigured ? 'กำลังโหลดแสงจาก cloud...' : 'โหมดทดลอง: เก็บข้อมูลในเครื่องนี้');
   const [tonightCount, setTonightCount] = useState(marks.length);
-  const [resetCountdownText, setResetCountdownText] = useState(() => getResetCountdownText());
+  const [moonCycleCountdown, setMoonCycleCountdown] = useState(() => getMoonCycleCountdown());
 
   useEffect(() => {
     const handlePopState = () => {
@@ -217,7 +221,7 @@ function App() {
 
   useEffect(() => {
     const countdownTimer = window.setInterval(() => {
-      setResetCountdownText(getResetCountdownText());
+      setMoonCycleCountdown(getMoonCycleCountdown());
     }, 1000);
 
     return () => {
@@ -298,7 +302,7 @@ function App() {
         <TonightMoonPage
           moodCounts={moodCounts}
           onNavigateHome={() => navigateTo('/')}
-          resetCountdownText={resetCountdownText}
+          resetCountdown={moonCycleCountdown}
           tonightCount={tonightCount}
         />
       ) : (
@@ -312,7 +316,7 @@ function App() {
             t__n_f__ling
           </a>
           <span className='data-status'>{dataStatus}</span>
-          <span className='reset-countdown'>รอบใหม่ใน {resetCountdownText}</span>
+          <span className='reset-countdown'>{moonCycleCountdown.label} {moonCycleCountdown.text}</span>
           <a className='ig-link' href='https://www.instagram.com/t__n_f__ling/'>
             instagram
           </a>
